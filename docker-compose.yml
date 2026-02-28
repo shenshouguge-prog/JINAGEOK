@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  jinageok:
+    build: .
+    container_name: jinageok-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./ktv.db:/app/ktv.db
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000

@@ -140,6 +140,7 @@ export default function App() {
   // Player Controls
   const [pitch, setPitch] = useState(0); // -6 to +6
   const [volume, setVolume] = useState(80);
+  const [fontScale, setFontScale] = useState(1.0);
   const [isOriginal, setIsOriginal] = useState(false);
   const [fontSize, setFontSize] = useState(24); // base font size
   const [containerHeight, setContainerHeight] = useState(0);
@@ -215,7 +216,7 @@ export default function App() {
     
     if (Math.abs(dragOffset) > 20 && videoRef.current) {
       // Calculate how many lines we moved
-      const linesMoved = Math.round(dragOffset / 60);
+      const linesMoved = Math.round(dragOffset / 42);
       const newIndex = Math.max(0, Math.min(lyrics.length - 1, currentLyricIndex - linesMoved));
       const newTime = lyrics[newIndex].time;
       videoRef.current.currentTime = newTime;
@@ -731,7 +732,7 @@ export default function App() {
   return (
     <div 
       ref={containerRef}
-      className="flex flex-col h-screen bg-neutral-950 text-neutral-100 font-sans overflow-hidden select-none"
+      className="flex flex-col h-[100dvh] bg-neutral-950 text-neutral-100 font-sans overflow-hidden select-none pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
       style={{ fontFamily: '"Inter", "Microsoft YaHei", "Heiti SC", sans-serif' }}
     >
       {/* --- Top Menu Bar --- */}
@@ -831,17 +832,6 @@ export default function App() {
         {/* Admin Settings */}
         <div className="flex items-center gap-2">
           <button 
-            onClick={async () => {
-              setIsSyncing(true);
-              await fetchSongs(member?.phone);
-              setTimeout(() => setIsSyncing(false), 1000);
-            }}
-            className={`p-2 rounded-full hover:bg-white/10 transition-colors text-neutral-400 hover:text-white ${isSyncing ? 'animate-spin text-indigo-400' : ''}`}
-            title="同步歌库"
-          >
-            <Database size={20} />
-          </button>
-          <button 
             onClick={() => setIsAdminModalOpen(true)}
             className="p-2 rounded-full hover:bg-white/10 transition-colors text-neutral-400 hover:text-white"
           >
@@ -928,23 +918,51 @@ export default function App() {
             </div>
           )}
 
+          {/* Font Size Controls */}
+          <div className="absolute top-4 left-4 z-40 flex flex-col gap-2 pointer-events-auto">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setFontScale(s => Math.min(s + 0.1, 2.0));
+              }}
+              className="p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+              title="放大歌词"
+            >
+              <Plus size={20} />
+            </button>
+            <div className="flex items-center justify-center text-[10px] font-bold text-white/40">
+              <Type size={12} className="mr-1" />
+              {Math.round(fontScale * 100)}%
+            </div>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setFontScale(s => Math.max(s - 0.1, 0.5));
+              }}
+              className="p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+              title="缩小歌词"
+            >
+              <Minus size={20} />
+            </button>
+          </div>
+
           <div className="w-full max-w-4xl h-full flex flex-col items-center overflow-hidden relative">
             <motion.div 
-              animate={{ y: -currentLyricIndex * 60 + containerHeight * 0.3 - 240 + dragOffset }}
+              animate={{ y: -currentLyricIndex * 42 + (containerHeight / 2) - 42 + dragOffset }}
               transition={isDraggingLyrics ? { type: "tween", duration: 0 } : { type: "spring", damping: 25, stiffness: 120 }}
-              className="absolute top-0 left-0 right-0 flex flex-col items-center gap-4 py-20"
+              className="absolute top-0 left-0 right-0 flex flex-col items-center gap-0 py-20"
             >
               {lyrics.map((line, index) => {
                 // Auto font size calculation: base size reduced if line is long
                 const lineLength = line.text.length;
                 const scaleFactor = lineLength > 20 ? Math.max(0.5, 20 / lineLength) : 1;
-                const currentLineFontSize = index === currentLyricIndex ? fontSize * scaleFactor : fontSize * 0.8 * scaleFactor;
+                const currentLineFontSize = (index === currentLyricIndex ? fontSize * scaleFactor : fontSize * 0.8 * scaleFactor) * fontScale;
 
                 return (
                   <div 
                     key={index}
-                    style={{ fontSize: `${currentLineFontSize}px`, height: '60px' }}
-                    className={`transition-all duration-300 font-bold text-center flex items-center justify-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] w-full px-4 ${
+                    style={{ fontSize: `${currentLineFontSize}px`, height: '42px' }}
+                    className={`transition-all duration-300 font-bold text-center flex items-center justify-center leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] w-full px-4 ${
                       index === currentLyricIndex ? 'text-white opacity-100 scale-110' : 'text-neutral-500 opacity-70'
                     }`}
                   >
